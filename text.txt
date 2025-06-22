@@ -1,0 +1,463 @@
+下面按照您的要求，将项目的所有代码文件内容（包括 XML、Kotlin、Gradle 等）整合在一起，先以文件名做标记，再给出完整的文件结构。以下内容均以 Markdown 代码块展示。
+
+─────────────────────────────  
+【1. 项目所有代码文件内容】
+
+─────────────────────────────  
+File: build.gradle (项目级配置)
+```gradle
+buildscript {
+    ext.kotlin_version = '1.6.10'
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.0.4'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+```
+
+─────────────────────────────  
+File: settings.gradle
+```gradle
+rootProject.name = "CatalpaTodo"
+include ':app'
+```
+
+─────────────────────────────  
+File: app/build.gradle
+```gradle
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+android {
+    compileSdkVersion 33
+    defaultConfig {
+        applicationId "com.yourcompany.catalpatodo"
+        minSdkVersion 21
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    buildFeatures {
+        viewBinding true
+    }
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.6.10"
+    implementation 'androidx.appcompat:appcompat:1.3.0'
+    implementation 'com.google.android.material:material:1.4.0'
+    implementation 'com.google.code.gson:gson:2.9.0'
+}
+```
+
+─────────────────────────────  
+File: app/proguard-rules.pro
+```pro
+# Add your ProGuard rules here.
+```
+
+─────────────────────────────  
+File: app/src/main/AndroidManifest.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest package="com.yourcompany.catalpatodo"
+    xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:label="Catalpa Todo"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CatalpaTodo">
+        
+        <activity android:name=".LoginActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".RegisterActivity" />
+        <activity android:name=".MainActivity" />
+
+        <receiver android:name=".TodoWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/todo_widget_info" />
+        </receiver>
+
+    </application>
+
+</manifest>
+```
+
+─────────────────────────────  
+File: app/src/main/java/com/yourcompany/catalpatodo/MainActivity.kt
+```kotlin
+package com.yourcompany.catalpatodo
+
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_main.*
+
+class MainActivity : AppCompatActivity() {
+
+    private var todos: MutableList<Todo> = mutableListOf()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
+
+        // TODO: 初始化RecyclerView或ListView以展示TODO列表
+
+        // 导出按钮
+        btnExport.setOnClickListener {
+            val result = TodoImportExportManager.exportTodos(this, todos)
+            // 根据result提示导出结果
+        }
+
+        // 导入按钮
+        btnImport.setOnClickListener {
+            val importedTodos = TodoImportExportManager.importTodos(this)
+            if (importedTodos != null) {
+                todos.clear()
+                todos.addAll(importedTodos)
+                // 刷新列表展示
+            }
+        }
+    }
+}
+```
+
+─────────────────────────────  
+File: app/src/main/java/com/yourcompany/catalpatodo/LoginActivity.kt
+```kotlin
+package com.yourcompany.catalpatodo
+
+import android.content.Intent
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_login.*
+
+class LoginActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_login)
+
+        btnLogin.setOnClickListener {
+            // 登录验证逻辑
+            startActivity(Intent(this, MainActivity::class.java))
+        }
+
+        tvRegister.setOnClickListener {
+            startActivity(Intent(this, RegisterActivity::class.java))
+        }
+    }
+}
+```
+
+─────────────────────────────  
+File: app/src/main/java/com/yourcompany/catalpatodo/RegisterActivity.kt
+```kotlin
+package com.yourcompany.catalpatodo
+
+import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import kotlinx.android.synthetic.main.activity_register.*
+
+class RegisterActivity : AppCompatActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_register)
+
+        btnRegister.setOnClickListener {
+            // 处理注册逻辑，如输入校验、创建账号等
+            finish()
+        }
+    }
+}
+```
+
+─────────────────────────────  
+File: app/src/main/java/com/yourcompany/catalpatodo/TodoWidget.kt
+```kotlin
+package com.yourcompany.catalpatodo
+
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.appwidget.AppWidgetProvider
+import android.content.Context
+import android.content.Intent
+import android.widget.RemoteViews
+
+class TodoWidget : AppWidgetProvider() {
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        for (widgetId in appWidgetIds) {
+            val views = RemoteViews(context.packageName, R.layout.widget_todo)
+            val intent = Intent(context, MainActivity::class.java)
+            val pendingIntent = PendingIntent.getActivity(context, 0, intent, 
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            views.setOnClickPendingIntent(R.id.widget_container, pendingIntent)
+            appWidgetManager.updateAppWidget(widgetId, views)
+        }
+    }
+}
+```
+
+─────────────────────────────  
+File: app/src/main/java/com/yourcompany/catalpatodo/TodoImportExportManager.kt
+```kotlin
+package com.yourcompany.catalpatodo
+
+import android.content.Context
+import com.google.gson.Gson
+import java.io.File
+
+data class Todo(val id: Int, val title: String, val completed: Boolean)
+
+object TodoImportExportManager {
+
+    fun exportTodos(context: Context, todos: List<Todo>, fileName: String = "todos.json"): Boolean {
+        return try {
+            val json = Gson().toJson(todos)
+            val file = File(context.filesDir, fileName)
+            file.writeText(json)
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun importTodos(context: Context, fileName: String = "todos.json"): List<Todo>? {
+        return try {
+            val file = File(context.filesDir, fileName)
+            if (!file.exists()) return null
+            val json = file.readText()
+            Gson().fromJson(json, Array<Todo>::class.java)?.toList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+}
+```
+
+─────────────────────────────  
+File: app/src/main/java/com/yourcompany/catalpatodo/Todo.kt
+```kotlin
+package com.yourcompany.catalpatodo
+
+data class Todo(val id: Int, val title: String, val completed: Boolean)
+```
+
+─────────────────────────────  
+File: app/src/main/res/layout/activity_main.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- TODO列表展示控件 -->
+    <ListView
+        android:id="@+id/todoListView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- 导入导出按钮 -->
+    <Button
+        android:id="@+id/btnExport"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Export TODOS" />
+
+    <Button
+        android:id="@+id/btnImport"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Import TODOS" />
+
+</LinearLayout>
+```
+
+─────────────────────────────  
+File: app/src/main/res/layout/activity_login.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etUsername"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Username" />
+
+    <EditText
+        android:id="@+id/etPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Password"
+        android:inputType="textPassword" />
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Login" />
+
+    <TextView
+        android:id="@+id/tvRegister"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Not registered? Sign up" />
+
+</LinearLayout>
+```
+
+─────────────────────────────  
+File: app/src/main/res/layout/activity_register.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Email" />
+
+    <EditText
+        android:id="@+id/etUsername"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Username" />
+
+    <EditText
+        android:id="@+id/etPassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Password"
+        android:inputType="textPassword" />
+
+    <Button
+        android:id="@+id/btnRegister"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Register" />
+
+</LinearLayout>
+```
+
+─────────────────────────────  
+File: app/src/main/res/layout/widget_todo.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/widgetText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="TODO Widget"
+        android:textSize="18sp" />
+
+</FrameLayout>
+```
+
+─────────────────────────────  
+File: app/src/main/res/xml/todo_widget_info.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="146dp"
+    android:minHeight="72dp"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_todo"
+    android:resizeMode="horizontal|vertical" >
+</appwidget-provider>
+```
+
+─────────────────────────────  
+
+【2. 项目文件结构】
+
+```
+CatalpaTodo/
+├── app/
+│   ├── build.gradle
+│   ├── proguard-rules.pro
+│   └── src/
+│       ├── main/
+│       │   ├── AndroidManifest.xml
+│       │   ├── java/
+│       │   │   └── com/
+│       │   │       └── yourcompany/
+│       │   │           └── catalpatodo/
+│       │   │               ├── MainActivity.kt
+│       │   │               ├── LoginActivity.kt
+│       │   │               ├── RegisterActivity.kt
+│       │   │               ├── TodoWidget.kt
+│       │   │               ├── TodoImportExportManager.kt
+│       │   │               └── Todo.kt
+│       │   └── res/
+│       │       ├── layout/
+│       │       │   ├── activity_main.xml
+│       │       │   ├── activity_login.xml
+│       │       │   ├── activity_register.xml
+│       │       │   └── widget_todo.xml
+│       │       ├── values/
+│       │       │   ├── colors.xml
+│       │       │   ├── strings.xml
+│       │       │   └── styles.xml
+│       │       └── xml/
+│       │           └── todo_widget_info.xml
+├── build.gradle
+└── settings.gradle
+```
+
+─────────────────────────────  
+说明：  
+1. 为简洁起见，部分文件（例如 colors.xml、strings.xml、styles.xml）内容未详细列出，可根据实际项目需要自行添加。  
+2. 上述示例项目代码仅供参考，实际实现时可根据需求扩展和调整。  
+
+如有其它问题请随时告知！
