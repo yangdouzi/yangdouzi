@@ -461,3 +461,46 @@ CatalpaTodo/
 2. 上述示例项目代码仅供参考，实际实现时可根据需求扩展和调整。  
 
 如有其它问题请随时告知！
+
+
+下面提供之前为简洁起见未详细显示的部分文件示例内容，具体文件及内容如下：
+
+─────────────────────────────  
+File: app/src/main/res/values/colors.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <!-- 根据实际项目需要可添加更多颜色 -->
+</resources>
+```
+
+─────────────────────────────  
+File: app/src/main/res/values/strings.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Catalpa Todo</string>
+    <string name="hello_world">Hello world!</string>
+    <!-- 根据实际需求添加其它字符串资源 -->
+</resources>
+```
+
+─────────────────────────────  
+File: app/src/main/res/values/styles.xml
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 定义应用主题风格 -->
+    <style name="Theme.CatalpaTodo" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <!-- 可根据需求添加更多样式属性 -->
+    </style>
+</resources>
+```
+
+以上就是之前简略省略部分文件的示例内容，如有其它需要或进一步修改请告知！
